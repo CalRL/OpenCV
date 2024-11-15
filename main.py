@@ -12,31 +12,39 @@ finger_tips = [4, 8, 12, 16, 20]
 finger_names = ["Thumb", "Index", "Middle", "Ring", "Pinky"]
 
 
-def detect_raised_fingers(hand_landmarks):
+def detect_raised_fingers_with_hitbox(hand_landmarks, frame_width, frame_height, frame, margin=20):
     raised_fingers = []
 
-    # Calculate the palm bounding box
-    palm_landmarks = [hand_landmarks.landmark[i] for i in [0, 5, 9, 13, 17]]
-    min_x = min([lm.x for lm in palm_landmarks])
-    max_x = max([lm.x for lm in palm_landmarks])
-    min_y = min([lm.y for lm in palm_landmarks])
-    max_y = max([lm.y for lm in palm_landmarks])
+    # Get palm landmarks (landmarks for wrist and base of each finger)
+    palm_landmarks = [hand_landmarks.landmark[i] for i in [0, 1, 5, 9, 13, 17]]
 
-    # Thumb is considered raised if it's outside the palm bounding box and visible
-    thumb_tip = hand_landmarks.landmark[4]
-    if not (min_x <= thumb_tip.x <= max_x and min_y <= thumb_tip.y <= max_y):
-        raised_fingers.append("Thumb")
+    # Convert palm landmarks to absolute pixel coordinates
+    palm_coords = [(int(lm.x * frame_width), int(lm.y * frame_height)) for lm in palm_landmarks]
 
-    # Check other fingers
-    for idx in range(1, 5):  # Skip thumb (idx = 0)
+    # Calculate the bounding rectangle around the palm
+    x_min = min([coord[0] for coord in palm_coords]) - margin
+    x_max = max([coord[0] for coord in palm_coords]) + margin
+    y_min = min([coord[1] for coord in palm_coords]) - margin
+    y_max = max([coord[1] for coord in palm_coords]) + margin
+
+    # Clamp hitbox coordinates to stay within frame dimensions
+    x_min = max(0, x_min)
+    x_max = min(frame_width, x_max)
+    y_min = max(0, y_min)
+    y_max = min(frame_height, y_max)
+
+    # Visualize the wider palm hitbox
+    cv.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 255), 2)
+
+    # Check if finger tips are inside the hitbox
+    for idx in range(5):  # Check all fingers
         tip = finger_tips[idx]
         tip_landmark = hand_landmarks.landmark[tip]
+        tip_x = int(tip_landmark.x * frame_width)
+        tip_y = int(tip_landmark.y * frame_height)
 
-        # Finger is considered raised if:
-        # 1. Tip is above its lower joint (normal finger raise check).
-        # 2. Tip is outside the palm bounding box.
-        if (tip_landmark.y < hand_landmarks.landmark[tip - 2].y and
-                not (min_x <= tip_landmark.x <= max_x and min_y <= tip_landmark.y <= max_y)):
+        # If the tip is outside the hitbox, consider the finger raised
+        if not (x_min <= tip_x <= x_max and y_min <= tip_y <= y_max):
             raised_fingers.append(finger_names[idx])
 
     return raised_fingers
@@ -54,7 +62,9 @@ with mp_hands.Hands(
             print("Ignoring empty camera frame.")
             continue
 
-        # Flip the frame horizontally for a later selfie-view display
+        frame_height, frame_width, _ = frame.shape
+
+        # Flip the frame horizontally for a selfie-view display
         frame = cv.flip(frame, 1)
         # Convert the color from BGR to RGB for Mediapipe
         rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -65,7 +75,7 @@ with mp_hands.Hands(
         # Check if hands are detected
         if results.multi_hand_landmarks:
             for hand_landmarks in results.multi_hand_landmarks:
-                # Draw hand landmarks on the original frame
+                # Draw hand landmarks on the frame
                 mp_drawing.draw_landmarks(
                     frame,
                     hand_landmarks,
@@ -74,8 +84,8 @@ with mp_hands.Hands(
                     mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2)
                 )
 
-                # Detect raised fingers
-                raised_fingers = detect_raised_fingers(hand_landmarks)
+                # Detect raised fingers with wider hitbox logic
+                raised_fingers = detect_raised_fingers_with_hitbox(hand_landmarks, frame_width, frame_height, frame, margin=50)
                 if raised_fingers:
                     if "Middle" in raised_fingers and len(raised_fingers) == 1:
                         text = "Gesture detected: Middle finger raised!"
