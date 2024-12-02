@@ -73,6 +73,7 @@ class WiFiClientHandler:
                 print(f"Error closing the connection: {e}")
         self.client_socket = None
 
+
 if __name__ == "__main__":
     # Update with your Arduino server's IP and port
     host = "192.168.4.1"
