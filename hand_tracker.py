@@ -3,6 +3,7 @@ import mediapipe as mp
 import numpy as np
 from typing import List, Optional
 from wifi_handler import WiFiClientHandler
+from server import Server
 
 class HandTracker:
 
@@ -188,7 +189,8 @@ class HandTracker:
                     if raised_fingers:
                         if len(raised_fingers) == 2 and "Index" in raised_fingers and "Pinky" in raised_fingers and self.state != 1:
                             self.state = 1
-                            self.client_handler.send_message("STATE1")
+                            message = "STATE1"
+                            self.client_handler.send_message(message)
                         elif self.state != 1 and not raised_fingers:
                             self.state = 0
                     elif self.state != 0:

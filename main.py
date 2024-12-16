@@ -1,4 +1,5 @@
 from hand_tracker import HandTracker
+from server import Server
 
 def main():
     """
