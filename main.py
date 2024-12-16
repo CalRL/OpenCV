@@ -11,11 +11,11 @@ def main():
         if connect_choice == 'Y':
             # Create HandTracker instance with WiFi connection
             tracker = HandTracker(
-                host="192.168.4.1",  # WiFi host
-                port=80,             # WiFi port
-                max_hands=2,         # Maximum hands to track
-                detection_confidence=0.7,  # Detection sensitivity
-                tracking_confidence=0.5    # Tracking stability
+                host="192.168.4.1",
+                port=80,
+                max_hands=1,
+                detection_confidence=0.7,
+                tracking_confidence=0.5
             )
             break
         elif connect_choice == 'N':
@@ -25,9 +25,9 @@ def main():
                 tracker = HandTracker(
                     host=None,        # Disable WiFi connection
                     port=None,        # Disable WiFi connection
-                    max_hands=2,      # Maximum hands to track
-                    detection_confidence=0.7,  # Detection sensitivity
-                    tracking_confidence=0.5    # Tracking stability
+                    max_hands=1,
+                    detection_confidence=0.7,
+                    tracking_confidence=0.5
                 )
             except Exception as e:
                 print(f"Error creating tracker: {e}")
@@ -36,6 +36,7 @@ def main():
             break
         else:
             print("Invalid input. Please enter Y or N.")
+            exit()
 
     # Start hand tracking
     try:

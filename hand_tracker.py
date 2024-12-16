@@ -5,6 +5,7 @@ from typing import List, Optional
 from wifi_handler import WiFiClientHandler
 
 class HandTracker:
+
     def __init__(self,
                  host: Optional[str] = "192.168.4.1",
                  port: Optional[int] = 80,
@@ -178,20 +179,21 @@ class HandTracker:
                 self.draw_polygon(frame, hand_landmarks)
 
                 # Detect raised fingers
+                hands = []
                 raised_fingers = self.detect_raised_fingers(hand_landmarks, frame_width, frame_height, frame)
+                hands.append(raised_fingers)
 
                 # State and message handling (only if WiFi is connected)
                 if self.client_handler:
                     if raised_fingers:
-                        if len(raised_fingers) == 5 and self.state != 1:
+                        if len(raised_fingers) == 2 and "Index" in raised_fingers and "Pinky" in raised_fingers and self.state != 1:
                             self.state = 1
-                            self.client_handler.send_message("Raised")
+                            self.client_handler.send_message("STATE1")
                     elif self.state != 0:
                         self.state = 0
-                        self.client_handler.send_message("Not raised")
+
 
         return frame
-
     def run(self):
         """
         Main tracking loop
