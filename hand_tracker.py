@@ -189,6 +189,8 @@ class HandTracker:
                         if len(raised_fingers) == 2 and "Index" in raised_fingers and "Pinky" in raised_fingers and self.state != 1:
                             self.state = 1
                             self.client_handler.send_message("STATE1")
+                        elif self.state != 1 and not raised_fingers:
+                            self.state = 0
                     elif self.state != 0:
                         self.state = 0
 
