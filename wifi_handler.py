@@ -1,9 +1,10 @@
 import socket
 import time
+from server import Server
 
 
 class WiFiClientHandler:
-    def __init__(self, host, port):
+    def __init__(self, host, port, main):
         """
         Initializes the WiFi client with the given host and port.
 
@@ -13,6 +14,8 @@ class WiFiClientHandler:
         self.host = host
         self.port = port
         self.client_socket = None
+        self.server = main.get_server()
+        self.server.run()
 
     def connect(self):
         """
@@ -51,11 +54,13 @@ class WiFiClientHandler:
         """
         if not self.client_socket:
             print("Not connected to the server. Call connect() first.")
-            return None
+            exit()
 
         try:
             response = self.client_socket.recv(1024).decode().strip()
-            print(f"Received from Arduino: {response}")
+            if response != " " and response != "":
+                self.server.add_message(response)
+                print(f"Received from Arduino: {response}")
             return response
         except Exception as e:
             print(f"Error receiving message: {e}")

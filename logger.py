@@ -19,7 +19,18 @@ class Logger:
         if self.log_file != current_log_file:
             self.log_file = current_log_file
         print(message)
-
-        timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
         with open(self.log_file, 'a') as file:
-            file.write(f"{timestamp}: {message}\n")
+            file.write(f"{message}\n")
+
+    def get_last_messages(self, number):
+        """
+        Reads the last 'n' messages from the current log file.
+        :param number: Number of messages to retrieve.
+        :return: List of last 'n' messages.
+        """
+        try:
+            with open(self.log_file, 'r') as file:
+                lines = file.readlines()
+                return lines[-number:]  # Get the last 'n' lines
+        except FileNotFoundError:
+            return []

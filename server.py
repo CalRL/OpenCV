@@ -1,14 +1,15 @@
 from flask import Flask, render_template_string
 import threading
 import time
+
 from logger import Logger
 
 class Server:
-    def __init__(self):
+    def __init__(self, main):
         self.app = Flask(__name__)
-        self.messages = []
         self._add_routes()
-        self.logger = Logger()
+        self.logger = main.get_logger()
+        self.messages = self.logger.get_last_messages(10)
 
     def _add_routes(self):
         @self.app.route('/')
@@ -78,7 +79,7 @@ class Server:
         self.logger.add_message(message)
 
     def run(self, host='0.0.0.0', port=5000):
-        thread = threading.Thread(target=self.app.run, kwargs={'host': host, 'port': port, 'debug': False, 'use_reloader': False})
+        thread = threading.Thread(target=self.app.run, kwargs={'host': host, 'port': port, 'debug': False, 'use_reloader': False}, daemon=True)
         thread.start()
 
 if __name__ == '__main__':

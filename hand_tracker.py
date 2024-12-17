@@ -3,17 +3,19 @@ import mediapipe as mp
 import numpy as np
 from typing import List, Optional
 from wifi_handler import WiFiClientHandler
-from server import Server
+import threading
+
 
 class HandTracker:
-
     def __init__(self,
+                 main,
                  host: Optional[str] = "192.168.4.1",
                  port: Optional[int] = 80,
                  max_hands: int = 2,
                  detection_confidence: float = 0.7,
                  tracking_confidence: float = 0.5,
-                 hitbox_margin: int = 20):
+                 hitbox_margin: int = 20,
+                 ):
         """
         Initialize HandTracker with configurable parameters and optional WiFi connection
 
@@ -29,9 +31,14 @@ class HandTracker:
         self.client_handler = None
         if host is not None and port is not None:
             try:
-                self.client_handler = WiFiClientHandler(host, port)
+                self.client_handler = WiFiClientHandler(host, port, main)
                 self.client_handler.connect()
                 print("WiFi connection established.")
+
+                self.messages = []
+                self.listening_thread = threading.Thread(target=self.listen_for_messages, daemon=True)
+                self.listening_thread.start()
+
             except Exception as e:
                 print(f"Failed to establish WiFi connection: {e}")
                 raise
@@ -56,6 +63,15 @@ class HandTracker:
             min_detection_confidence=detection_confidence,
             min_tracking_confidence=tracking_confidence
         )
+
+    def listen_for_messages(self):
+        """
+        Loop to continuously call receive_message.
+        """
+        while True:
+            message = self.client_handler.receive_message()
+            if message:
+                self.messages.append(message)
 
     def draw_polygon(self, frame, hand_landmarks):
         """
@@ -195,7 +211,6 @@ class HandTracker:
                             self.state = 0
                     elif self.state != 0:
                         self.state = 0
-
 
         return frame
     def run(self):
