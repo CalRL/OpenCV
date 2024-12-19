@@ -27,8 +27,8 @@ class Main:
                 global tracker
                 tracker = HandTracker(
                     self,
-                    host="192.168.4.1",
-                    port=80,
+                    host="172.20.10.2",
+                    port=5001,
                     max_hands=1,
                     detection_confidence=0.7,
                     tracking_confidence=0.5
@@ -36,7 +36,6 @@ class Main:
                 break
             elif connect_choice == 'N':
                 # Create HandTracker instance without WiFi connection
-                # Note: You might need to modify the WiFiClientHandler to support a no-connect mode
                 try:
                     tracker = HandTracker(
                         self,

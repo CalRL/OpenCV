@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string
+from flask import Flask, render_template_string, request
 import threading
 import time
 
@@ -18,6 +18,12 @@ class Server:
             return render_template_string(self._get_html_template(),
                                           time=current_time,
                                           messages=self.messages)
+
+        @self.app.route('/', methods=['POST'])
+        def handle_post():
+            data = request.data.decode('utf-8')  # Decode the received data
+            self.add_message(data)
+            return "Data received successfully", 200
 
     def _get_html_template(self):
         return '''
