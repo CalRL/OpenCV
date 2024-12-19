@@ -9,8 +9,6 @@ import threading
 class HandTracker:
     def __init__(self,
                  main,
-                 host: Optional[str] = "192.168.4.1",
-                 port: Optional[int] = 80,
                  max_hands: int = 2,
                  detection_confidence: float = 0.7,
                  tracking_confidence: float = 0.5,
@@ -29,19 +27,18 @@ class HandTracker:
         """
         # WiFi Communication Setup
         self.client_handler = None
-        if host is not None and port is not None:
-            try:
-                self.client_handler = WiFiClientHandler(host, port, main)
-                self.client_handler.connect()
-                print("WiFi connection established.")
+        try:
+            self.client_handler = WiFiClientHandler(main)
+            self.client_handler.connect()
+            print("WiFi connection established.")
 
-                self.messages = []
-                self.listening_thread = threading.Thread(target=self.listen_for_messages, daemon=True)
-                self.listening_thread.start()
+            self.messages = []
+            self.listening_thread = threading.Thread(target=self.listen_for_messages, daemon=True)
+            self.listening_thread.start()
 
-            except Exception as e:
-                print(f"Failed to establish WiFi connection: {e}")
-                raise
+        except Exception as e:
+            print(f"Failed to establish WiFi connection: {e}")
+            raise
 
         # Hand Detection Constants
         self.finger_tips = [4, 8, 12, 16, 20]

@@ -4,22 +4,21 @@ from server import Server
 
 
 class WiFiClientHandler:
-    def __init__(self, host, port, main):
+    def __init__(self, main):
         """
         Initializes the WiFi client with the given host and port.
-
-        :param host: IP address of the Arduino server
-        :param port: Port number of the Arduino server
         """
-        self.host = host
-        self.port = port
+        self.config = main.get_config()
+        self.host: str = self.config['arduino']["host"]
+        self.port: int = self.config['arduino']["port"]
         self.client_socket = None
         self.server = main.get_server()
         self.server.run()
+        self.logger = main.get_logger()
 
     def connect(self):
         """
-        Connects to the Arduino Wi-Fi server.
+        Connects to the Arduino.
         """
         try:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -60,6 +59,7 @@ class WiFiClientHandler:
             response = self.client_socket.recv(1024).decode().strip()
             if response != " " and response != "":
                 self.server.add_message(response)
+                self.logger.add_message(response)
                 print(f"Received from Arduino: {response}")
             return response
         except Exception as e:

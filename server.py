@@ -10,6 +10,7 @@ class Server:
         self._add_routes()
         self.logger = main.get_logger()
         self.messages = self.logger.get_last_messages(10)
+        self.config = main.get_config()
 
     def _add_routes(self):
         @self.app.route('/')
@@ -23,6 +24,7 @@ class Server:
         def handle_post():
             data = request.data.decode('utf-8')  # Decode the received data
             self.add_message(data)
+            self.logger.add_message(data)
             return "Data received successfully", 200
 
     def _get_html_template(self):
@@ -82,17 +84,14 @@ class Server:
         timestamp = self.get_current_time()
         message = f"{timestamp}: {message}"
         self.messages.append(message)
-        self.logger.add_message(message)
 
-    def run(self, host='0.0.0.0', port=5000):
-        thread = threading.Thread(target=self.app.run, kwargs={'host': host, 'port': port, 'debug': False, 'use_reloader': False}, daemon=True)
+    def run(self):
+        host: str = self.config["server"]["host"]
+        port: int = self.config["server"]["port"]
+        thread = threading.Thread(target=self.app.run(host=host,
+                                                      port=port,
+                                                      debug=False,
+                                                      use_reloader=False),
+                                  daemon=True)
         thread.start()
-
-if __name__ == '__main__':
-    server = Server()
-    logger = Logger()
-
-    server.add_message("Hello, World!")
-
-    server.add_message("This is a test message.")
-    server.run()
+        print(host, port)

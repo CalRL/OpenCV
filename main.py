@@ -1,18 +1,36 @@
 import threading
 import time
+import yaml
 
 from hand_tracker import HandTracker
 from server import Server
 from logger import Logger
+from database import Database
 
 tracker = None
 server = None
 logger = None
+config = None
+database = None
+
+
 class Main:
     def __init__(self):
-        global server, logger, tracker
-        logger = Logger()
+        global server, logger, database
+        logger = Logger(self)
         server = Server(self)
+        database = Database(self)
+
+    def read_config(self):
+        try:
+            with open("config.yml", "r") as config_file:
+                global config
+                config = yaml.safe_load(config_file)
+                return config
+        except Exception as e:
+            print("No config.yml file detected...")
+            print("Creating now...")
+
 
     def run(self):
         """
@@ -27,8 +45,6 @@ class Main:
                 global tracker
                 tracker = HandTracker(
                     self,
-                    host="172.20.10.2",
-                    port=5001,
                     max_hands=1,
                     detection_confidence=0.7,
                     tracking_confidence=0.5
@@ -39,8 +55,6 @@ class Main:
                 try:
                     tracker = HandTracker(
                         self,
-                        host=None,
-                        port=None,
                         max_hands=1,
                         detection_confidence=0.7,
                         tracking_confidence=0.5
@@ -70,11 +84,25 @@ class Main:
     def get_logger(self):
         return logger
 
+    def get_config(self):
+        return config
 
+    def add_message(self, message):
+        if self.read_config()["logs"]["log_to_logger"]:
+            logger.add_message(message)
+        if self.read_config()["logs"]["log_to_server"]:
+            server.add_message(message)
+        if self.read_config()["logs"]["log_to_database"]:
+            database.save_to_db(message)
+
+    def is_server_enabled(self):
+        return
 if __name__ == "__main__":
 
     main = Main()
-    main.run()
+    thread = threading.Thread(target=main.run())
+    thread.run()
+
 
 
 

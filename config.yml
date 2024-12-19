@@ -1,0 +1,17 @@
+server:
+  host: 0.0.0.0
+  port: 5000
+
+database:
+  path: "./db/database.db"
+
+arduino:
+  host: 172.20.10.2
+  port: 5000
+
+logs:
+  directory: "logs"
+  log_to_server: True
+  log_to_database: False
+  log_to_logger: True
+  log_to_thingspeak: True

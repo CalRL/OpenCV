@@ -2,17 +2,19 @@ import time
 import os
 
 class Logger:
-    def __init__(self):
+    def __init__(self, main):
         self.log_file = self.get_log_file()
         self.ensure_log_directory()
+        self.config = main.get_config()
+        self.directory = self.config['logs']['directory']
 
     def get_log_file(self):
         current_day = time.strftime('%d-%m-%Y', time.localtime())
-        return os.path.join('logs', f"log_{current_day}.log")
+        return os.path.join(self.directory, f"log_{current_day}.log")
 
     def ensure_log_directory(self):
-        if not os.path.exists('logs'):
-            os.makedirs('logs')
+        if not os.path.exists(self.directory):
+            os.makedirs(self.directory)
 
     def add_message(self, message):
         current_log_file = self.get_log_file()
