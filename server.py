@@ -32,13 +32,14 @@ class Server:
         @self.app.route('/', methods=['POST'])
         def handle_post():
             data = request.data.decode('utf-8')
-            if data is not None and data != " ":
-                self.main.debug(f"{data} < to split") # Decode the received data
+            if data is not None and data is not " " and data is not "":
+                self.main.debug(f"{data} < to split")
                 timer, message = data.split(":", 1)
                 self.main.debug(message)
                 self.main.add_message(message)
                 self.main.stop_timer(timer)
                 return "Data received successfully", 200
+            return "Bad Request", 400
 
     def get_html_template(self):
         return '''
@@ -89,9 +90,6 @@ class Server:
         </body>
         </html>
         '''
-
-    def get_current_time(self):
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
     def get_messages_for_day(self, date):
         """

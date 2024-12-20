@@ -50,7 +50,7 @@ class Main:
         while True:
             # Generate a unique ID
             timer_id = str(uuid.uuid4())
-            if timer_id not in self.timers:  # Ensure no duplicate IDs
+            if timer_id not in self.timers:
                 break
 
         # Start the timer
@@ -150,7 +150,7 @@ class Main:
 
     def send_to_thingspeak(self, message, channel_id):
         channel = thingspeak.Channel(id=channel_id, api_key=self.thingspeak_keys[channel_id])
-        if message is not None and self.read_config()["logs"]["log_to_thingspeak"] == True:
+        if message is not None and self.read_config()["logs"]["log_to_thingspeak"]:
             try:
                 channel.update({'field1': message})
                 self.debug("Updated successfully: ")

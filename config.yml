@@ -1,5 +1,5 @@
 # DEBUG = TRUE prints extra messages to the python console.
-debug: True
+debug: False
 
 server:
   host: 0.0.0.0
