@@ -2,7 +2,8 @@ import cv2 as cv
 import mediapipe as mp
 import numpy as np
 from typing import List, Optional
-from wifi_handler import WiFiClientHandler
+
+from wifi_handler import WiFiClientHandler, send_message
 import threading
 
 
@@ -27,6 +28,7 @@ class HandTracker:
         """
         # WiFi Communication Setup
         self.client_handler = None
+        self.main = main
         try:
             print(f"Connecting to arduino")
             self.client_handler = WiFiClientHandler(main)
@@ -204,7 +206,9 @@ class HandTracker:
                     if raised_fingers:
                         if len(raised_fingers) == 2 and "Index" in raised_fingers and "Pinky" in raised_fingers and self.state != 1:
                             self.state = 1
-                            message = "STATE1"
+                            command = "FLIPSTATE"
+                            timer = self.main.start_timer()
+                            message = timer + ":" + command
                             self.client_handler.send_message(message)
                         elif self.state != 1 and not raised_fingers:
                             self.state = 0
@@ -219,6 +223,7 @@ class HandTracker:
         cap = cv.VideoCapture(0)
 
         try:
+            is_s_pressed = False
             while cap.isOpened():
                 success, frame = cap.read()
                 if not success:
@@ -228,8 +233,15 @@ class HandTracker:
                 processed_frame = self.process_frame(frame)
                 cv.imshow("Hand Tracking", processed_frame)
 
-                if cv.waitKey(1) & 0xFF == ord('q'):
+                key = cv.waitKey(1) & 0xFF
+                if key == ord('q'):
                     break
+                elif key == ord('s'):
+                    if not is_s_pressed:
+                        get_state(self.main.start_timer())
+                        is_s_pressed = True
+                elif key != ord('s'):
+                    is_s_pressed = False
         finally:
             # Disconnect WiFi only if a connection was established
             if self.client_handler:
@@ -237,4 +249,6 @@ class HandTracker:
             cap.release()
             cv.destroyAllWindows()
 
-    # Rest of the existing methods remain the same...
+
+def get_state(timer_id):
+    send_message(f"{timer_id}:GETSTATE")

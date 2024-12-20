@@ -2,7 +2,7 @@ import socket
 import time
 from server import Server
 
-
+client_handler = None
 class WiFiClientHandler:
     def __init__(self, main):
         """
@@ -19,6 +19,9 @@ class WiFiClientHandler:
         self.logger = main.get_logger()
         print(f"{WiFiClientHandler.__name__} Init complete")
         self.main = main
+
+        global client_handler
+        client_handler = self
 
     def connect(self):
         """
@@ -63,7 +66,7 @@ class WiFiClientHandler:
             response = self.client_socket.recv(1024).decode().strip()
             if response != " " and response != "":
                 self.main.add_message(response)
-                print(f"Received from Arduino: {response}")
+                self.main.debug(f"Received from Arduino: {response}")
             return response
         except Exception as e:
             print(f"Error receiving message: {e}")
@@ -80,3 +83,10 @@ class WiFiClientHandler:
             except Exception as e:
                 print(f"Error closing the connection: {e}")
         self.client_socket = None
+
+
+def send_message(message):
+    if client_handler is not None:
+        client_handler.send_message(message)
+    else:
+        print("Cannot send message, client_handler is None.")

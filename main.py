@@ -1,7 +1,12 @@
 import threading
 import time
-import yaml
+import uuid
 
+import yaml
+from dotenv import dotenv_values
+import thingspeak
+
+import wifi_handler
 from hand_tracker import HandTracker
 from server import Server
 from logger import Logger
@@ -15,8 +20,15 @@ database = None
 
 
 class Main:
+
+    thingspeak_keys = {
+        2791652: dotenv_values(".env")["MAIN_KEY"],
+        2791860: dotenv_values(".env")["PERFORMANCE_KEY"]
+    }
+
     def __init__(self):
         global server, logger, database
+        self.timers = {}
         logger = Logger(self)
         server = Server(self)
         database = Database(self)
@@ -29,8 +41,38 @@ class Main:
                 return config
         except Exception as e:
             print("No config.yml file detected...")
-            print("Creating now...")
 
+    def start_timer(self):
+        """
+        Starts a timer and generates a unique, non-duplicate timer ID.
+        :return: The unique timer ID
+        """
+        while True:
+            # Generate a unique ID
+            timer_id = str(uuid.uuid4())
+            if timer_id not in self.timers:  # Ensure no duplicate IDs
+                break
+
+        # Start the timer
+        self.timers[timer_id] = time.time()
+        self.debug(f"Started timer with ID '{timer_id}'.")
+        return timer_id
+
+    def stop_timer(self, timer_id):
+        """
+        Stops a timer with the given ID and returns the elapsed time.
+        :param timer_id: Unique ID for the timer
+        :return: Elapsed time in seconds, or None if the timer doesn't exist
+        """
+        if timer_id not in self.timers:
+            print(f"No timer found with ID '{timer_id}'.")
+            return None
+        else:
+            elapsed_time = time.time() - self.timers[timer_id]
+            del self.timers[timer_id]  # Remove the timer from the dictionary
+            self.debug(f"Stopped timer with ID '{timer_id}'. Elapsed time: {elapsed_time:.3f} seconds")
+            self.send_to_thingspeak(elapsed_time, 2791860)
+            return elapsed_time
 
     def run(self):
         """
@@ -95,15 +137,33 @@ class Main:
             logger.add_message(message)
         if self.read_config()["logs"]["log_to_database"]:
             database.save_to_db(message)
+        if self.read_config()["logs"]["log_to_thingspeak"]:
+            state = None
+            if("HIGH" in message):
+                state = 1
+            elif("LOW" in message):
+                state = 0
+            self.send_to_thingspeak(state, 2791652)
 
     def get_current_time(self):
         return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
-if __name__ == "__main__":
+    def send_to_thingspeak(self, message, channel_id):
+        channel = thingspeak.Channel(id=channel_id, api_key=self.thingspeak_keys[channel_id])
+        if message is not None and self.read_config()["logs"]["log_to_thingspeak"] == True:
+            try:
+                channel.update({'field1': message})
+                self.debug("Updated successfully: ")
+            except Exception as e:
+                self.add_message(f"[ERROR] {e}")
 
+    def debug(self, message):
+        if self.read_config()["debug"]:
+            print(message)
+
+
+
+
+if __name__ == "__main__":
     main = Main()
     main.run()
-
-
-
-

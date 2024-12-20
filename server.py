@@ -32,7 +32,10 @@ class Server:
         @self.app.route('/', methods=['POST'])
         def handle_post():
             data = request.data.decode('utf-8')  # Decode the received data
-            self.main.add_message(data)
+            timer, message = data.split(":", 1)
+            self.main.debug(message)
+            self.main.add_message(message)
+            self.main.stop_timer(timer)
             return "Data received successfully", 200
 
     def get_html_template(self):

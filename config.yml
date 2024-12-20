@@ -1,3 +1,6 @@
+# DEBUG = TRUE prints extra messages to the python console.
+debug: True
+
 server:
   host: 0.0.0.0
   port: 5000
@@ -14,3 +17,4 @@ logs:
   log_to_database: True
   log_to_logger: True
   log_to_thingspeak: True
+

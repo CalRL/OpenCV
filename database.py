@@ -46,7 +46,7 @@ class Database:
                 """, (self.main.get_current_time(), message))
             conn.commit()
             conn.close()
-            print("Saved successfully.")
+            self.main.debug("Saved successfully.")
         except Exception as e:
             message = f"[ERROR] Couldn't save string: {e}"
             self.main.add_message(message)
