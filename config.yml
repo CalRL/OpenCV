@@ -7,11 +7,10 @@ database:
 
 arduino:
   host: 172.20.10.2
-  port: 5000
+  port: 5001
 
 logs:
-  directory: "logs"
-  log_to_server: True
-  log_to_database: False
+  directory: "./logs"
+  log_to_database: True
   log_to_logger: True
   log_to_thingspeak: True

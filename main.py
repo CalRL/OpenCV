@@ -87,21 +87,22 @@ class Main:
     def get_config(self):
         return config
 
+    def get_database(self):
+        return database
+
     def add_message(self, message):
         if self.read_config()["logs"]["log_to_logger"]:
             logger.add_message(message)
-        if self.read_config()["logs"]["log_to_server"]:
-            server.add_message(message)
         if self.read_config()["logs"]["log_to_database"]:
             database.save_to_db(message)
 
-    def is_server_enabled(self):
-        return
+    def get_current_time(self):
+        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+
 if __name__ == "__main__":
 
     main = Main()
-    thread = threading.Thread(target=main.run())
-    thread.run()
+    main.run()
 
 
 

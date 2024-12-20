@@ -8,13 +8,17 @@ class WiFiClientHandler:
         """
         Initializes the WiFi client with the given host and port.
         """
+        print(f"{WiFiClientHandler.__name__} Fetching config...")
         self.config = main.get_config()
         self.host: str = self.config['arduino']["host"]
         self.port: int = self.config['arduino']["port"]
+        print(f"Connecting to {self.host}:{self.port}")
         self.client_socket = None
         self.server = main.get_server()
         self.server.run()
         self.logger = main.get_logger()
+        print(f"{WiFiClientHandler.__name__} Init complete")
+        self.main = main
 
     def connect(self):
         """
@@ -58,8 +62,7 @@ class WiFiClientHandler:
         try:
             response = self.client_socket.recv(1024).decode().strip()
             if response != " " and response != "":
-                self.server.add_message(response)
-                self.logger.add_message(response)
+                self.main.add_message(response)
                 print(f"Received from Arduino: {response}")
             return response
         except Exception as e:
@@ -77,23 +80,3 @@ class WiFiClientHandler:
             except Exception as e:
                 print(f"Error closing the connection: {e}")
         self.client_socket = None
-
-
-if __name__ == "__main__":
-    # Update with your Arduino server's IP and port
-    host = "192.168.4.1"
-    port = 80
-
-    client = WiFiClientHandler(host, port)
-    client.connect()
-
-    try:
-        while True:
-            msg = input("Enter a message to send (type 'exit' to quit): ")
-            if msg.lower() == "exit":
-                break
-            client.send_message(msg)
-            client.receive_message()
-            time.sleep(0.1)
-    finally:
-        client.disconnect()

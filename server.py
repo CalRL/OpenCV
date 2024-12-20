@@ -1,3 +1,5 @@
+import sqlite3
+
 from flask import Flask, render_template_string, request
 import threading
 import time
@@ -9,25 +11,31 @@ class Server:
         self.app = Flask(__name__)
         self._add_routes()
         self.logger = main.get_logger()
-        self.messages = self.logger.get_last_messages(10)
+        self.database = main.get_database()
         self.config = main.get_config()
+        self.main = main
 
     def _add_routes(self):
         @self.app.route('/')
         def index():
             current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-            return render_template_string(self._get_html_template(),
+            current_date = time.strftime('%Y-%m-%d', time.localtime())
+
+            # Fetch all messages for the current day
+            daily_messages = self.get_messages_for_day(current_date)
+            daily_messages.sort(reverse=True)
+
+            return render_template_string(self.get_html_template(),
                                           time=current_time,
-                                          messages=self.messages)
+                                          messages=daily_messages)
 
         @self.app.route('/', methods=['POST'])
         def handle_post():
             data = request.data.decode('utf-8')  # Decode the received data
-            self.add_message(data)
-            self.logger.add_message(data)
+            self.main.add_message(data)
             return "Data received successfully", 200
 
-    def _get_html_template(self):
+    def get_html_template(self):
         return '''
         <!DOCTYPE html>
         <html>
@@ -80,18 +88,32 @@ class Server:
     def get_current_time(self):
         return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
-    def add_message(self, message):
-        timestamp = self.get_current_time()
-        message = f"{timestamp}: {message}"
-        self.messages.append(message)
+    def get_messages_for_day(self, date):
+        """
+        Fetches messages for a specific day from the SQLite database.
+
+        :param date: The date in yyyy-mm-dd format.
+        :return: A list of messages for the day.
+        """
+        query = "SELECT timestamp, string FROM light_logs WHERE timestamp LIKE ?"
+        date_pattern = f"{date}%"  # Matches all timestamps starting with the selected date
+        try:
+            conn = sqlite3.connect(self.config["database"]["path"])
+            cursor = conn.cursor()
+            cursor.execute(query, (date_pattern,))
+            results = cursor.fetchall()
+            # Format messages as "timestamp: message"
+            return [f"{row[0]}: {row[1]}" for row in results]
+        except Exception as e:
+            print(f"Error fetching messages for {date}: {e}")
+            return []
 
     def run(self):
         host: str = self.config["server"]["host"]
         port: int = self.config["server"]["port"]
-        thread = threading.Thread(target=self.app.run(host=host,
-                                                      port=port,
-                                                      debug=False,
-                                                      use_reloader=False),
-                                  daemon=True)
+        thread = threading.Thread(target=self.app.run, args=(host, port), kwargs={
+            "debug": False,
+            "use_reloader": False
+        }, daemon=True)
         thread.start()
         print(host, port)

@@ -3,10 +3,12 @@ import os
 
 class Logger:
     def __init__(self, main):
+        self.config = main.read_config()
+        self.directory: str = self.config['logs']['directory']
         self.log_file = self.get_log_file()
         self.ensure_log_directory()
-        self.config = main.get_config()
-        self.directory = self.config['logs']['directory']
+
+
 
     def get_log_file(self):
         current_day = time.strftime('%d-%m-%Y', time.localtime())

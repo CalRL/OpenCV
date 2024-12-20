@@ -28,7 +28,9 @@ class HandTracker:
         # WiFi Communication Setup
         self.client_handler = None
         try:
+            print(f"Connecting to arduino")
             self.client_handler = WiFiClientHandler(main)
+            print("Handler created")
             self.client_handler.connect()
             print("WiFi connection established.")
 
