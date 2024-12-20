@@ -31,12 +31,14 @@ class Server:
 
         @self.app.route('/', methods=['POST'])
         def handle_post():
-            data = request.data.decode('utf-8')  # Decode the received data
-            timer, message = data.split(":", 1)
-            self.main.debug(message)
-            self.main.add_message(message)
-            self.main.stop_timer(timer)
-            return "Data received successfully", 200
+            data = request.data.decode('utf-8')
+            if data is not None and data != " ":
+                self.main.debug(f"{data} < to split") # Decode the received data
+                timer, message = data.split(":", 1)
+                self.main.debug(message)
+                self.main.add_message(message)
+                self.main.stop_timer(timer)
+                return "Data received successfully", 200
 
     def get_html_template(self):
         return '''
