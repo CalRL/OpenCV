@@ -24,7 +24,9 @@ class Database:
                 CREATE TABLE IF NOT EXISTS light_logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
-                    string TEXT NOT NULL
+                    string TEXT NOT NULL,
+                    timer_id TEXT,
+                    time FLOAT
                     )
             """)
             conn.commit()
@@ -34,20 +36,22 @@ class Database:
 
         except Exception as e:
             message = f"[ERROR] {e}"
+            print(message)
             self.logger.add_message(message)
 
-    def save_to_db(self, message):
+    def save_to_db(self, message, timer_id, time):
         try:
             conn = sqlite3.connect(self.config["database"]["path"])
             cursor = conn.cursor()
             cursor.execute("""
-                    INSERT INTO light_logs (timestamp, string)
-                    VALUES (?, ?)
-                """, (self.main.get_current_time(), message))
+                    INSERT INTO light_logs (timestamp, string, timer_id, time)
+                    VALUES (?, ?, ?, ?)
+                """, (self.main.get_current_time(), message, timer_id, time))
             conn.commit()
             conn.close()
             self.main.debug("Saved successfully.")
         except Exception as e:
             message = f"[ERROR] Couldn't save string: {e}"
-            self.main.add_message(message)
+            print(message)
+            self.logger.add_message(message)
 

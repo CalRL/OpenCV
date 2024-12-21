@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Metrics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .metrics-container {
+            width: 50%;
+            margin: 50px auto;
+            text-align: center;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="metrics-container">
+    <h2>Daily Signal Counts</h2>
+    {% if daily_data %}
+        <canvas id="dailyChart"></canvas>
+    {% else %}
+        <p>No data available to display.</p>
+    {% endif %}
+
+    <h2>Today's Performance</h2>
+    {% if today_performance %}
+        <div id="averagePerformance"></div>
+        <canvas id="performanceChart"></canvas>
+    {% else %}
+        <p>No performance data available for today.</p>
+    {% endif %}
+    <h2>High/Low State for Today</h2>
+    {% if high_low_data %}
+        <canvas id="highLowChart" width="800" height="400"></canvas>
+    {% else %}
+        <p>No high/low data for today</p>
+    {% endif %}
+
+</div>
+
+{% if daily_data %}
+    <script>
+        const dailyData = {{ daily_data | tojson }};
+        const labels = dailyData.map(item => item.date);
+        const counts = dailyData.map(item => item.count);
+
+        const ctx = document.getElementById("dailyChart").getContext("2d");
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Entries Per Day",
+                    data: counts,
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+{% endif %}
+
+{% if today_performance %}
+    <script>
+        const performanceData = {{ today_performance | tojson }};
+        const timestamps = performanceData.map(item => item.timestamps);
+        const times = performanceData.map(item => item.time);  // Extract y-axis data
+
+        let sum = 0;
+        for(let i =0; i < times.length; i++) {
+            sum += times[i];
+        }
+        
+        const averagesTitle = document.getElementById("averagePerformance")
+        averagesTitle.innerHTML = "Average performance today: <strong>" + (sum / times.length).toString() + "</strong> seconds."
+        const ctx2 = document.getElementById("performanceChart").getContext("2d");
+        new Chart(ctx2, {
+            type: "line",
+            data: {
+                labels: timestamps,  // Timestamps as x-axis labels
+                datasets: [{
+                    label: "Performance Over Time (seconds)",
+                    data: times,  // Times as y-axis data
+                    fill: false,
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    tension: 0.1
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Timestamp (HH:MM:SS)"
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Time (seconds)"
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+{% endif %}
+
+{% if high_low_data %}
+
+    <script>
+        const highLowData = {{ high_low_data | tojson }};
+        console.log("High/Low Data:", highLowData);
+
+
+        const highLowTimestamps = highLowData.map(item => item.timestamp.split(" ")[1]); // Use only the time part
+        const values = highLowData.map(item => item.value);
+
+        const highLowCtx = document.getElementById("highLowChart").getContext("2d");
+        new Chart(highLowCtx, {
+            type: "line",
+            data: {
+                labels: highLowTimestamps, // X-axis: Time values
+                datasets: [{
+                    label: "State (1=HIGH, 0=LOW)",
+                    data: values, // Y-axis: Binary values
+                    fill: false,
+                    borderColor: "rgba(255, 99, 132, 1)",
+                    borderWidth: 2,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Timestamp (HH:MM:SS)"
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1 // Ensure only 0 and 1 are shown
+                        },
+                        title: {
+                            display: true,
+                            text: "State"
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "top"
+                    }
+                }
+            }
+        });
+    </script>
+{% endif %}
+</body>
+</html>

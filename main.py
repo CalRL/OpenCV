@@ -65,7 +65,7 @@ class Main:
         :return: Elapsed time in seconds, or None if the timer doesn't exist
         """
         if timer_id not in self.timers:
-            print(f"No timer found with ID '{timer_id}'.")
+            self.debug(f"No timer found with ID '{timer_id}'.")
             return None
         else:
             elapsed_time = time.time() - self.timers[timer_id]
@@ -132,11 +132,11 @@ class Main:
     def get_database(self):
         return database
 
-    def add_message(self, message):
+    def add_message(self, message, timer_id=None, time_elapsed=None):
         if self.read_config()["logs"]["log_to_logger"]:
             logger.add_message(message)
         if self.read_config()["logs"]["log_to_database"]:
-            database.save_to_db(message)
+            database.save_to_db(message, timer_id, time_elapsed)
         if self.read_config()["logs"]["log_to_thingspeak"]:
             state = None
             if("HIGH" in message):
@@ -147,6 +147,9 @@ class Main:
 
     def get_current_time(self):
         return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+
+    def get_current_date(self):
+        return time.strftime('%Y-%m-%d', time.localtime())
 
     def send_to_thingspeak(self, message, channel_id):
         channel = thingspeak.Channel(id=channel_id, api_key=self.thingspeak_keys[channel_id])

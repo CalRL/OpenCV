@@ -1,6 +1,6 @@
 import sqlite3
 
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template_string, request, render_template
 import threading
 import time
 
@@ -25,71 +25,30 @@ class Server:
             daily_messages = self.get_messages_for_day(current_date)
             daily_messages.sort(reverse=True)
 
-            return render_template_string(self.get_html_template(),
-                                          time=current_time,
-                                          messages=daily_messages)
+            return render_template("index.html", time=current_time, messages=daily_messages)
+
+        @self.app.route('/metrics')
+        def metrics():
+            daily_data = self.get_daily_string_counts() or []
+            today_performance = self.get_performance_data(self.main.get_current_date()) or []
+            high_low_data = self.get_high_low_data(self.main.get_current_date())
+
+            print(f"High/Low Data: {high_low_data}")
+            return render_template("metrics.html", daily_data=daily_data, today_performance=today_performance, high_low_data=high_low_data)
+
 
         @self.app.route('/', methods=['POST'])
         def handle_post():
             data = request.data.decode('utf-8')
-            if data is not None and data is not " " and data is not "":
+            if data is not None and data != " " and data != "":
                 self.main.debug(f"{data} < to split")
                 timer, message = data.split(":", 1)
                 self.main.debug(message)
-                self.main.add_message(message)
-                self.main.stop_timer(timer)
+                time_elapsed = self.main.stop_timer(timer)
+                self.main.add_message(message, timer, time_elapsed)
+
                 return "Data received successfully", 200
             return "Bad Request", 400
-
-    def get_html_template(self):
-        return '''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 0;
-                }
-                .top-bar {
-                    background-color: #333;
-                    color: white;
-                    padding: 10px;
-                    text-align: center;
-                    position: fixed;
-                    top: 0;
-                    width: 100%;
-                }
-                .content {
-                    margin-top: 50px;
-                    padding: 20px;
-                }
-                ul {
-                    list-style-type: none;
-                    padding: 0;
-                }
-                li {
-                    background-color: #f9f9f9;
-                    border: 1px solid #ddd;
-                    border-radius: 5px;
-                    padding: 10px;
-                    margin-bottom: 10px;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="top-bar">Current Time: {{ time }}</div>
-            <div class="content">
-                <h2>Messages</h2>
-                <ul>
-                    {% for message in messages %}
-                        <li>{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </body>
-        </html>
-        '''
 
     def get_messages_for_day(self, date):
         """
@@ -99,16 +58,73 @@ class Server:
         :return: A list of messages for the day.
         """
         query = "SELECT timestamp, string FROM light_logs WHERE timestamp LIKE ?"
-        date_pattern = f"{date}%"  # Matches all timestamps starting with the selected date
+        date_pattern = f"{date}%"
+        results = self.execute_query(query, (date_pattern,))
+        return [f"{row[0]}: {row[1]}" for row in results]
+
+    def get_daily_string_counts(self):
+        """
+        Fetches the count of strings for each day from the SQLite database.
+
+        :return: A list of dictionaries with 'date' and 'count'.
+        """
+        query = """
+        SELECT DATE(timestamp) as date, COUNT(*) as count
+        FROM light_logs
+        GROUP BY DATE(timestamp)
+        ORDER BY DATE(timestamp) ASC
+        """
+        results = self.execute_query(query)
+        return [{"date": row[0], "count": row[1]} for row in results]
+
+    def get_performance_data(self, date):
+        """
+        Fetches the performance data for today based on 'timer_id' and 'time'.
+
+        :return: A list of dictionaries with 'timer_id' and 'time'.
+        """
+        query = """
+        SELECT timestamp, time
+        FROM light_logs
+        WHERE DATE(timestamp) = ?
+        """
+
+        results = self.execute_query(query, (date,))
+        formatted_results = [{"timestamps": row[0].split(" ")[1], "time": row[1]} for row in results]
+        self.main.debug(f"Formatted Results: {formatted_results}")
+        return formatted_results
+
+    def get_high_low_data(self, date):
+        query = "SELECT timestamp, string FROM light_logs WHERE timestamp LIKE ?"
+        date_pattern = f"{date}%"
+        results = self.execute_query(query, (date_pattern,))
+        formatted_results = []
+        for row in results:
+            timestamp = row[0]
+            value = 1 if "HIGH" in row[1].upper() else 0
+            formatted_results.append({"timestamp": timestamp, "value": value})
+        return formatted_results
+
+    def execute_query(self, query, params=()):
+        """
+        Executes an SQL query
+
+        :param query: The SQL query to execute.
+        :param params: A tuple of parameters to pass to the query.
+        :return: A list of processed rows.
+        """
         try:
             conn = sqlite3.connect(self.config["database"]["path"])
             cursor = conn.cursor()
-            cursor.execute(query, (date_pattern,))
+            cursor.execute(query, params)
             results = cursor.fetchall()
-            # Format messages as "timestamp: message"
-            return [f"{row[0]}: {row[1]}" for row in results]
+            conn.close()
+
+            if not results:
+                self.main.debug("results is null")
+            return results
         except Exception as e:
-            print(f"Error fetching messages for {date}: {e}")
+            print(f"Error executing query: {e}")
             return []
 
     def run(self):
@@ -120,3 +136,5 @@ class Server:
         }, daemon=True)
         thread.start()
         print(host, port)
+
+
