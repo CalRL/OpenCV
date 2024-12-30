@@ -1,3 +1,4 @@
+from datetime import datetime
 import sqlite3
 
 from flask import Flask, render_template_string, request, render_template
@@ -18,7 +19,7 @@ class Server:
     def _add_routes(self):
         @self.app.route('/')
         def index():
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            current_time = time.strftime('%H:%M:%S', time.localtime())
             current_date = time.strftime('%Y-%m-%d', time.localtime())
 
             # Fetch all messages for the current day
@@ -36,6 +37,20 @@ class Server:
             print(f"High/Low Data: {high_low_data}")
             return render_template("metrics.html", daily_data=daily_data, today_performance=today_performance, high_low_data=high_low_data)
 
+        @self.app.route("/date=<date>", methods=['GET'])
+        def handle_get(date):
+            try:
+                datetime.strptime(date, "%Y-%m-%d")
+            except ValueError as e:
+                return "Invalid date format", 404
+
+            logs = self.get_messages_for_day(date)
+
+            if not logs:
+                return "No logs found for this date", 404
+
+            current_time = time.strftime('%H:%M:%S', time.localtime())
+            return render_template("index.html", time=current_time, messages=logs)
 
         @self.app.route('/', methods=['POST'])
         def handle_post():

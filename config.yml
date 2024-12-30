@@ -1,5 +1,22 @@
 # DEBUG = TRUE prints extra messages to the python console.
 debug: true
+max_threads: 4
+
+tracker:
+  frame_width: 1280
+  frame_height: 960
+  framerate: 30
+  # Modes: BOX, GESTURE
+  mode: GESTURE
+  box:
+    # Box size
+    width: 640
+    height: 480
+    # Box position
+    x: 320
+    y: 420
+
+
 
 server:
   host: 0.0.0.0

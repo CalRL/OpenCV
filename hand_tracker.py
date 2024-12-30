@@ -29,6 +29,8 @@ class HandTracker:
         # WiFi Communication Setup
         self.client_handler = None
         self.main = main
+        self.config = self.main.get_config()
+        self.mode = self.config["tracker"]["mode"]
         try:
             print(f"Connecting to arduino")
             self.client_handler = WiFiClientHandler(main)
@@ -64,6 +66,34 @@ class HandTracker:
             min_detection_confidence=detection_confidence,
             min_tracking_confidence=tracking_confidence
         )
+
+    def detect_in_box(self, hand_landmarks, frame_width, frame_height):
+        """
+        Check if all hand landmarks fall into the specified positional box.
+
+        Args:
+            hand_landmarks: MediaPipe hand landmarks
+            frame_width (int): Width of the video frame
+            frame_height (int): Height of the video frame
+
+        Returns:
+            bool: True if all landmarks are within the box, False otherwise.
+        """
+        # Get box configuration
+        box_x_min, box_y_min, box_x_max, box_y_max = self.get_box_boundaries(frame_width, frame_height)
+
+        # Convert all landmarks to pixel coordinates
+        landmark_coords = [(int(lm.x * frame_width), int(lm.y * frame_height)) for lm in hand_landmarks.landmark]
+
+        # Check if all landmarks are inside the box
+        all_in_box = all(
+            box_x_min <= x <= box_x_max and
+            box_y_min <= y <= box_y_max
+            for x, y in landmark_coords
+        )
+
+        return all_in_box
+
 
     def listen_for_messages(self):
         """
@@ -165,6 +195,35 @@ class HandTracker:
 
         return raised_fingers
 
+    def get_box_boundaries(self, frame_width, frame_height):
+        """
+        Calculate the boundaries of the box based on the configuration.
+
+        Args:
+            frame_width (int): Width of the video frame
+            frame_height (int): Height of the video frame
+
+        Returns:
+            tuple: (box_x_min, box_y_min, box_x_max, box_y_max)
+        """
+        tracker_config = self.config.get("tracker", {})
+        box_config = tracker_config.get("box", {"width": 640, "height": 480, "x": 320, "y": 420})
+
+        # Fixed box size and center position
+        box_width = box_config.get("width", 640)
+        box_height = box_config.get("height", 480)
+        box_center_x = box_config.get("x", frame_width // 2)
+        box_center_y = box_config.get("y", frame_height // 2)
+
+        # Calculate box boundaries
+        box_x_min = int(box_center_x - box_width / 2)
+        box_y_min = int(box_center_y - box_height / 2)
+        box_x_max = int(box_center_x + box_width / 2)
+        box_y_max = int(box_center_y + box_height / 2)
+
+        return box_x_min, box_y_min, box_x_max, box_y_max
+
+
     def process_frame(self, frame):
         """
         Process a single video frame for hand tracking
@@ -182,6 +241,11 @@ class HandTracker:
         # Detect hands
         results = self.hands.process(rgb_frame)
 
+        # Always visualize the box if mode is BOX
+        if self.mode == "BOX":
+            box_x_min, box_y_min, box_x_max, box_y_max = self.get_box_boundaries(frame_width, frame_height)
+            cv.rectangle(frame, (box_x_min, box_y_min), (box_x_max, box_y_max), (255, 255, 0), 2)
+
         if results.multi_hand_landmarks:
             for hand_landmarks in results.multi_hand_landmarks:
                 # Draw hand landmarks
@@ -193,16 +257,9 @@ class HandTracker:
                     self.mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2)
                 )
 
-                # Draw polygon around palm
-                self.draw_polygon(frame, hand_landmarks)
-
-                # Detect raised fingers
-                hands = []
-                raised_fingers = self.detect_raised_fingers(hand_landmarks, frame_width, frame_height, frame)
-                hands.append(raised_fingers)
-
-                # State and message handling (only if WiFi is connected)
-                if self.client_handler:
+                if self.mode == "GESTURE":
+                    # Detect raised fingers
+                    raised_fingers = self.detect_raised_fingers(hand_landmarks, frame_width, frame_height, frame)
                     if raised_fingers:
                         if len(raised_fingers) == 2 and "Index" in raised_fingers and "Pinky" in raised_fingers and self.state != 1:
                             self.state = 1
@@ -210,17 +267,51 @@ class HandTracker:
                             timer = self.main.start_timer()
                             message = timer + ":" + command
                             self.client_handler.send_message(message)
-                        elif self.state != 1 and not raised_fingers:
+                        # More accessible than pinky AND index
+                        # # For people with arthritis for example
+                        elif len(raised_fingers) == 1 and "Index" in raised_fingers and self.state != 1:
+                            self.state = 1
+                            command = "FLIPSTATE"
+                            timer = self.main.start_timer()
+                            message = timer + ":" + command
+                            self.client_handler.send_message(message)
+
+                        elif self.state == 1 and not raised_fingers:
                             self.state = 0
                     elif self.state != 0:
                         self.state = 0
 
+                elif self.mode == "BOX":
+                    # Check if all landmarks are in the box
+                    all_in_box = self.detect_in_box(hand_landmarks, frame_width, frame_height)
+
+                    if all_in_box and self.state != 1:
+                        self.state = 1
+                        command = "FLIPSTATE"
+                        timer = self.main.start_timer()
+                        message = f"{timer}:{command}"
+                        self.client_handler.send_message(message)
+
+                    elif self.state == 1 and not all_in_box:
+                        self.state = 0
         return frame
+
     def run(self):
         """
         Main tracking loop
         """
-        cap = cv.VideoCapture(0)
+        frame_height: int = self.config["tracker"]["frame_height"]
+        frame_width: int = self.config["tracker"]["frame_width"]
+        thread_count: int = self.config["max_threads"]
+        framerate: int = self.config["tracker"]["framerate"]
+
+        cv.setUseOptimized(True)
+        cv.setNumThreads(thread_count)
+
+        cap = cv.VideoCapture(0, cv.CAP_DSHOW)
+        cap.set(cv.CAP_PROP_FRAME_WIDTH, frame_width)
+        cap.set(cv.CAP_PROP_FRAME_HEIGHT, frame_height)
+        cap.set(cv.CAP_PROP_FPS, framerate)
 
         try:
             is_s_pressed = False
@@ -234,12 +325,17 @@ class HandTracker:
                 cv.imshow("Hand Tracking", processed_frame)
 
                 key = cv.waitKey(1) & 0xFF
-                if key == ord('q'):
+
+                # Kill process if key is pressed
+                if key in [ord('q'), ord('Q')]:
                     break
-                elif key == ord('s'):
+                # Get the state and log it to db
+                elif key in [ord('s'), ord('S')]:
                     if not is_s_pressed:
                         get_state(self.main.start_timer())
                         is_s_pressed = True
+                # Prevent the user from accidentally sending multiple requests
+                # To not accidentally DoS the device
                 elif key != ord('s'):
                     is_s_pressed = False
         finally:
