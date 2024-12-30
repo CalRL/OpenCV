@@ -140,9 +140,9 @@ class Main:
         if self.read_config()["logs"]["log_to_thingspeak"]:
             state = None
             if("HIGH" in message):
-                state = 1
-            elif("LOW" in message):
                 state = 0
+            elif("LOW" in message):
+                state = 1
             self.send_to_thingspeak(state, 2791652)
 
     def get_current_time(self):

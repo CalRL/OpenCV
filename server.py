@@ -116,7 +116,7 @@ class Server:
         formatted_results = []
         for row in results:
             timestamp = row[0]
-            value = 1 if "HIGH" in row[1].upper() else 0
+            value = 0 if "HIGH" in row[1].upper() else 1
             formatted_results.append({"timestamp": timestamp, "value": value})
         return formatted_results
 
