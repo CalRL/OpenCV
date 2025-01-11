@@ -302,7 +302,7 @@ class HandTracker:
         """
         frame_height: int = self.config["tracker"]["frame_height"]
         frame_width: int = self.config["tracker"]["frame_width"]
-        thread_count: int = self.config["max_threads"]
+        thread_count: int = self.config["tracker"]["max_threads"]
         framerate: int = self.config["tracker"]["framerate"]
 
         cv.setUseOptimized(True)

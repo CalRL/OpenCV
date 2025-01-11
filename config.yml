@@ -1,8 +1,8 @@
 # DEBUG = TRUE prints extra messages to the python console.
 debug: true
-max_threads: 4
 
 tracker:
+  max_threads: 4
   frame_width: 1280
   frame_height: 960
   framerate: 30
