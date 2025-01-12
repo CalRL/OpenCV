@@ -16,6 +16,7 @@ class Database:
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
         # Connect and create the table if it doesnt exist already
+        # TODO: Make this it's own function, and docstring it.
         try:
             print(f"Trying db at {db_path}")
             conn = sqlite3.connect(self.config["database"]["path"])
@@ -40,6 +41,12 @@ class Database:
             self.logger.add_message(message)
 
     def save_to_db(self, message, timer_id, time):
+        """
+        Save a row to the database
+        :param message: The message to save
+        :param timer_id: The timer ID to save
+        :param time: The time elapsed between the start and end of the action
+        """
         try:
             conn = sqlite3.connect(self.config["database"]["path"])
             cursor = conn.cursor()

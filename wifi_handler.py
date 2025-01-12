@@ -86,6 +86,10 @@ class WiFiClientHandler:
 
 
 def send_message(message):
+    """
+    Static method to send a message to the arduino.
+    :param message: The message to send.
+    """
     if client_handler is not None:
         client_handler.send_message(message)
     else:

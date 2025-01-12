@@ -23,6 +23,15 @@ pip install -r requirements.txt
 ```bash
 pip list
 ```
+# Create environment variable file
+Create an empty file called ".env"
+Then, copy the keys into the file following the format.
+It should look like:
+```
+MAIN_KEY=PROVIDEDKEY
+PERFORMANCE_KEY=PROVIDEDKEY
+```
+Just replace "PROVIDEDKEY" with the keys provided in the report.
 
 
 # [Optional] Deactivate environment

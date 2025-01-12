@@ -1,9 +1,24 @@
-import cv2 as cv
-import mediapipe as mp
-import numpy as np
-from typing import List, Optional
+import time
 
+start = time.time()
+import cv2 as cv
+print(f"cv2 loaded in {time.time() - start:.3f} seconds")
+
+start = time.time()
+import mediapipe as mp
+print(f"mp loaded in {time.time() - start:.3f} seconds")
+
+start = time.time()
+import numpy as np
+print(f"np imported in {time.time() - start:.3f} seconds")
+
+start = time.time()
+from typing import List, Optional
+print(f"typing loaded in {time.time() - start:.3f} seconds")
+
+start = time.time()
 from wifi_handler import WiFiClientHandler, send_message
+print(f"wifi_handler loaded in {time.time() - start:.3f} seconds")
 import threading
 
 

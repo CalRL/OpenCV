@@ -1,43 +1,70 @@
-import threading
+print("Starting...")
 import time
 import uuid
 
-import yaml
+from yaml import safe_load
 from dotenv import dotenv_values
 import thingspeak
 
-import wifi_handler
+start = time.time()
+dotenv_values(".env")
+print(f"dotenv_values loaded in {time.time() - start:.3f} seconds")
+
+start = time.time()
 from hand_tracker import HandTracker
+print(f"hand_tracker imported in {time.time() - start:.3f} seconds")
+
+start = time.time()
 from server import Server
+print(f"server imported in {time.time() - start:.3f} seconds")
+
+start = time.time()
 from logger import Logger
+print(f"logger imported in {time.time() - start:.3f} seconds")
+
+start = time.time()
 from database import Database
+print(f"database imported in {time.time() - start:.3f} seconds")
 
-tracker = None
-server = None
-logger = None
+print("Imported classes")
+
+"""
+Initialize the variables as none, and only allow them to take their respective classes to avoid any issues.
+"""
+tracker: HandTracker | None = None
+server: Server | None = None
+logger: Logger | None = None
+database: Database | None = None
+
 config = None
-database = None
-
 
 class Main:
 
-    thingspeak_keys = {
+    thingspeak_keys: dict = {
         2791652: dotenv_values(".env")["MAIN_KEY"],
         2791860: dotenv_values(".env")["PERFORMANCE_KEY"]
     }
 
     def __init__(self):
+        print("Initializing Main")
         global server, logger, database
         self.timers = {}
         logger = Logger(self)
+        print("Logger initialized...")
         server = Server(self)
+        print("Server initialized...")
         database = Database(self)
+        print("Database initialized...")
 
     def read_config(self):
+        """
+        Read the content of the config YAML file and return it as a variable
+        :return: The config's content.
+        """
         try:
             with open("config.yml", "r") as config_file:
                 global config
-                config = yaml.safe_load(config_file)
+                config = safe_load(config_file)
                 return config
         except Exception as e:
             print("No config.yml file detected...")
@@ -80,7 +107,7 @@ class Main:
         """
         # Prompt user for connection preference
         while True:
-            connect_choice = input("Do you want to connect to WiFi? (Y/N): ").strip().upper()
+            connect_choice: str = input("Do you want to connect to WiFi? (Y/N): ").strip().upper()
 
             if connect_choice == 'Y':
                 # Create HandTracker instance with WiFi connection
@@ -118,21 +145,54 @@ class Main:
             print(f"An error occurred during hand tracking: {e}")
 
     def get_tracker(self):
+        """
+        Get the instance of the HandTracker class
+
+        :return: HandTracker if initialized else None
+        """
         return tracker
 
     def get_server(self):
+        """
+        Get instance of the Server class
+
+        :return: Server if initialized else None
+        """
         return server
 
     def get_logger(self):
+        """
+        Get instance of the Logger class
+
+        :return: Logger if initialized, else None
+        """
         return logger
 
     def get_config(self):
+        """
+        Get the variable storing the config]
+
+        :return:
+        """
         return config
 
     def get_database(self):
+        """
+        Get instance of the Database class
+
+        :return: Database if initialized, else None
+        """
         return database
 
+
     def add_message(self, message, timer_id=None, time_elapsed=None):
+        """
+        Adds a message to configured services
+
+        :param message: Message to add
+        :param timer_id: The timer's unique ID
+        :param time_elapsed: The time elapsed between start of the action, and end.
+        """
         if self.read_config()["logs"]["log_to_logger"]:
             logger.add_message(message)
         if self.read_config()["logs"]["log_to_database"]:
@@ -146,12 +206,25 @@ class Main:
             self.send_to_thingspeak(state, 2791652)
 
     def get_current_time(self):
+        """
+        Get the current date and time
+        :return: The date and time as a string in the format 'YYYY-MM-DD HH:mm:ss'
+        """
         return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
     def get_current_date(self):
+        """
+        Get the current date
+        :return: The date as a string in the format 'YYYY-MM-DD'.
+        """
         return time.strftime('%Y-%m-%d', time.localtime())
 
     def send_to_thingspeak(self, message, channel_id):
+        """
+
+        :param message: the message to send to ThingSpeak
+        :param channel_id: The ThingSpeak channelID
+        """
         channel = thingspeak.Channel(id=channel_id, api_key=self.thingspeak_keys[channel_id])
         if message is not None and self.read_config()["logs"]["log_to_thingspeak"]:
             try:
@@ -161,10 +234,12 @@ class Main:
                 self.add_message(f"[ERROR] {e}")
 
     def debug(self, message):
+        """
+        Debug method for testing purposes. Can be enabled or disabled in config.
+        :param message: The message
+        """
         if self.read_config()["debug"]:
             print(message)
-
-
 
 
 if __name__ == "__main__":

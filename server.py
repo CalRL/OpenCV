@@ -17,6 +17,10 @@ class Server:
         self.main = main
 
     def _add_routes(self):
+        """
+        Add the routes to the web server.
+        :return: The HTML page to serve.
+        """
         @self.app.route('/')
         def index():
             current_time = time.strftime('%H:%M:%S', time.localtime())
@@ -143,6 +147,9 @@ class Server:
             return []
 
     def run(self):
+        """
+        The main loop
+        """
         host: str = self.config["server"]["host"]
         port: int = self.config["server"]["port"]
         thread = threading.Thread(target=self.app.run, args=(host, port), kwargs={

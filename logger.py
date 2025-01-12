@@ -10,17 +10,27 @@ class Logger:
         self.ensure_log_directory()
         self.main = main
 
-
-
     def get_log_file(self):
+        """
+        Retrives the log file
+        :return: The log file
+        """
         current_day = time.strftime('%d-%m-%Y', time.localtime())
         return os.path.join(self.directory, f"log_{current_day}.log")
 
     def ensure_log_directory(self):
+        """
+        Check if log file exists, if the log file doesn't exist, create it.
+        """
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
 
     def add_message(self, message):
+        """
+        Adds a message to the log file.
+        Will also print to console if debug is enabled.
+        :param message: The message to added.
+        """
         current_log_file = self.get_log_file()
         if self.log_file != current_log_file:
             self.log_file = current_log_file
