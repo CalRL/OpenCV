@@ -38,7 +38,7 @@ class Server:
             today_performance = self.get_performance_data(self.main.get_current_date()) or []
             high_low_data = self.get_high_low_data(self.main.get_current_date())
 
-            print(f"High/Low Data: {high_low_data}")
+            self.main.debug(f"High/Low Data: {high_low_data}")
             return render_template("metrics.html", daily_data=daily_data, today_performance=today_performance, high_low_data=high_low_data)
 
         @self.app.route("/date=<date>", methods=['GET'])
