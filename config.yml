@@ -1,10 +1,13 @@
 # DEBUG = TRUE prints extra messages to the python console.
-debug: true
+debug: false
 
 tracker:
   max_threads: 4
+  # Resolution
   frame_width: 1280
   frame_height: 960
+  # Most webcams work at 30 or 60fps
+  # You can further lower this value on low-end machines.
   framerate: 30
   # Modes: BOX, GESTURE
   mode: GESTURE
@@ -29,9 +32,13 @@ arduino:
   host: 172.20.10.2
   port: 5001
 
+# Logging Configuration.
 logs:
   directory: "./logs"
+  # Logs the data to a SQLite database.
   log_to_database: True
+  # The Logger logs the data to a txt file.
   log_to_logger: True
+  # Logs the data to ThingSpeak
   log_to_thingspeak: True
 
