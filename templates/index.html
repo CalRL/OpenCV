@@ -35,7 +35,12 @@
 <body>
 <div class="top-bar">Current Time: {{ time }}</div>
 <div class="content">
+{% if date %}
+    <h2> {{ date }}'s Messages</h2>
+{% else %}
     <h2>Today's Messages</h2>
+{% endif %}
+
     <ul>
         {% for message in messages %}
             <li>{{ message }}</li>
