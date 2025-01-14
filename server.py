@@ -54,7 +54,7 @@ class Server:
                 return "No logs found for this date", 404
 
             current_time = time.strftime('%H:%M:%S', time.localtime())
-            return render_template("index.html", time=current_time, messages=logs)
+            return render_template("index.html", time=current_time, messages=logs, date=date)
 
         @self.app.route('/', methods=['POST'])
         def handle_post():
