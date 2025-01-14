@@ -1,3 +1,6 @@
+# IoT COM6017M
+This is the repository for the python side of the project.
+
 # If a virtual environment doesn't exist, use the following command to create it
 ```bash
 python -m venv .venv
