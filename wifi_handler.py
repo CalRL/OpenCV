@@ -1,5 +1,4 @@
 import socket
-import time
 from server import Server
 
 client_handler = None
@@ -23,17 +22,21 @@ class WiFiClientHandler:
         global client_handler
         client_handler = self
 
+    def create_socket(self):
+        return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
     def connect(self):
         """
         Connects to the Arduino.
         """
         try:
-            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.client_socket = self.create_socket()
             self.client_socket.connect((self.host, self.port))
             print(f"Connected to Arduino Wi-Fi server at {self.host}:{self.port}")
         except Exception as e:
             print(f"Error connecting to the server: {e}")
-            self.client_socket = None
+            print("Retrying...")
+            self.connect()
 
     def send_message(self, message):
         """
@@ -42,7 +45,8 @@ class WiFiClientHandler:
         :param message: String message to send
         """
         if not self.client_socket:
-            print("Not connected to the server. Call connect() first.")
+            print("Not connected to the server. Trying now...")
+            self.client_socket.connect(self.host, self.port)
             return
 
         try:
@@ -60,13 +64,18 @@ class WiFiClientHandler:
         """
         if not self.client_socket:
             print("Not connected to the server. Call connect() first.")
-            exit()
+            i = 0
+            while i < 10:
+                self.client_socket.connect(self.host, self.port)
+                i += 1
+            if not self.client_socket:
+                exit()
 
         try:
             response = self.client_socket.recv(1024).decode().strip()
             if response != " " and response != "":
                 self.main.add_message(response)
-                self.main.debug(f"Received from Arduino: {response}")
+                self.main.debug(f"SERVER: Received from Arduino: {response}")
             return response
         except Exception as e:
             print(f"Error receiving message: {e}")
