@@ -1,24 +1,12 @@
 import time
-
 start = time.time()
 import cv2 as cv
-print(f"cv2 loaded in {time.time() - start:.3f} seconds")
-
-start = time.time()
 import mediapipe as mp
-print(f"mp loaded in {time.time() - start:.3f} seconds")
+print(f"OpenCV and Mediapipe loaded in {time.time() - start:.5f} seconds")
 
-start = time.time()
 import numpy as np
-print(f"np imported in {time.time() - start:.3f} seconds")
-
-start = time.time()
 from typing import List, Optional
-print(f"typing loaded in {time.time() - start:.3f} seconds")
-
-start = time.time()
 from wifi_handler import WiFiClientHandler, send_message
-print(f"wifi_handler loaded in {time.time() - start:.3f} seconds")
 import threading
 
 
@@ -320,13 +308,16 @@ class HandTracker:
         thread_count: int = self.config["tracker"]["max_threads"]
         framerate: int = self.config["tracker"]["framerate"]
 
+        # Optimizations
         cv.setUseOptimized(True)
         cv.setNumThreads(thread_count)
 
         cap = cv.VideoCapture(0, cv.CAP_DSHOW)
         cap.set(cv.CAP_PROP_FRAME_WIDTH, frame_width)
         cap.set(cv.CAP_PROP_FRAME_HEIGHT, frame_height)
+
         cap.set(cv.CAP_PROP_FPS, framerate)
+
 
         try:
             is_s_pressed = False
@@ -339,6 +330,7 @@ class HandTracker:
                 processed_frame = self.process_frame(frame)
                 cv.imshow("Hand Tracking", processed_frame)
 
+                # TODO: make the key reader into its own function.
                 key = cv.waitKey(1) & 0xFF
 
                 # Kill process if key is pressed
@@ -351,14 +343,16 @@ class HandTracker:
                         is_s_pressed = True
                 # Prevent the user from accidentally sending multiple requests
                 # To not accidentally DoS the device
-                elif key != ord('s'):
+                elif key in [ord('s'), ord("S")]:
                     is_s_pressed = False
         finally:
-            # Disconnect WiFi only if a connection was established
+            # Gracefully disconnect.
             if self.client_handler:
                 self.client_handler.disconnect()
             cap.release()
             cv.destroyAllWindows()
+            logger = self.main.get_logger()
+            logger.add_message("Disconnected Gracefully.")
 
 
 def get_state(timer_id):

@@ -25,15 +25,17 @@ class Logger:
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
 
-    def add_message(self, message):
+    def add_message(self, message, date_time=None):
         """
         Adds a message to the log file.
         Will also print to console if debug is enabled.
         :param message: The message to added.
+        :param date_time: The current date and time.
         """
+        log_message = f"{date_time}: {message}"
         current_log_file = self.get_log_file()
         if self.log_file != current_log_file:
             self.log_file = current_log_file
-        self.main.debug(message)
+        self.main.debug(f"Adding to log file: {log_message}")
         with open(self.log_file, 'a') as file:
-            file.write(f"{message}\n")
+            file.write(f"{log_message}\n")

@@ -32,20 +32,21 @@ class Database:
             """)
             conn.commit()
             conn.close()
-            message = "Database created"
-            self.logger.add_message(message)
+            message = f"Connected to database at {main.get_current_time()}."
+            self.logger.add_message(message, main.get_current_time())
 
         except Exception as e:
             message = f"[ERROR] {e}"
             print(message)
-            self.logger.add_message(message)
+            self.logger.add_message(message, main.get_current_time())
 
-    def save_to_db(self, message, timer_id, time):
+    def save_to_db(self, message, timer_id, elapsed_time, date_time):
         """
         Save a row to the database
         :param message: The message to save
         :param timer_id: The timer ID to save
-        :param time: The time elapsed between the start and end of the action
+        :param elapsed_time: The time elapsed between the start and end of the action
+        :param date_time: The current date and time.
         """
         try:
             conn = sqlite3.connect(self.config["database"]["path"])
@@ -53,12 +54,12 @@ class Database:
             cursor.execute("""
                     INSERT INTO light_logs (timestamp, string, timer_id, time)
                     VALUES (?, ?, ?, ?)
-                """, (self.main.get_current_time(), message, timer_id, time))
+                """, (date_time, message, timer_id, elapsed_time))
             conn.commit()
             conn.close()
-            self.main.debug("Saved successfully.")
+            self.main.debug(f"{self.main.get_current_time()} Saved message successfully: {message}")
         except Exception as e:
             message = f"[ERROR] Couldn't save string: {e}"
             print(message)
-            self.logger.add_message(message)
+            self.logger.add_message(message, self.main.get_current_time())
 

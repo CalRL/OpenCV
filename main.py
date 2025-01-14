@@ -6,25 +6,10 @@ from yaml import safe_load
 from dotenv import dotenv_values
 import thingspeak
 
-start = time.time()
-dotenv_values(".env")
-print(f"dotenv_values loaded in {time.time() - start:.3f} seconds")
-
-start = time.time()
 from hand_tracker import HandTracker
-print(f"hand_tracker imported in {time.time() - start:.3f} seconds")
-
-start = time.time()
 from server import Server
-print(f"server imported in {time.time() - start:.3f} seconds")
-
-start = time.time()
 from logger import Logger
-print(f"logger imported in {time.time() - start:.3f} seconds")
-
-start = time.time()
 from database import Database
-print(f"database imported in {time.time() - start:.3f} seconds")
 
 print("Imported classes")
 
@@ -107,36 +92,21 @@ class Main:
         """
         # Prompt user for connection preference
         while True:
-            connect_choice: str = input("Do you want to connect to WiFi? (Y/N): ").strip().upper()
-
-            if connect_choice == 'Y':
-                # Create HandTracker instance with WiFi connection
-                global tracker
+            # Create HandTracker instance
+            global tracker
+            try:
                 tracker = HandTracker(
                     self,
                     max_hands=1,
                     detection_confidence=0.7,
                     tracking_confidence=0.5
-                )
-                break
-            elif connect_choice == 'N':
-                # Create HandTracker instance without WiFi connection
-                try:
-                    tracker = HandTracker(
-                        self,
-                        max_hands=1,
-                        detection_confidence=0.7,
-                        tracking_confidence=0.5
 
-                    )
-                except Exception as e:
-                    print(f"Error creating tracker: {e}")
-                    print("Tracker may require a WiFi connection. Consider connecting.")
-                    continue
-                break
-            else:
-                print("Invalid input. Please enter Y or N.")
-                exit()
+                )
+            except Exception as e:
+                print(f"Error creating tracker: {e}")
+                print("Tracker may require a WiFi connection. Consider connecting.")
+                continue
+            break
 
         # Start hand tracking
         try:
@@ -185,18 +155,22 @@ class Main:
         return database
 
 
-    def add_message(self, message, timer_id=None, time_elapsed=None):
+    def add_message(self, message, timer_id=None, time_elapsed=None, date_time=None):
         """
         Adds a message to configured services
 
         :param message: Message to add
         :param timer_id: The timer's unique ID
         :param time_elapsed: The time elapsed between start of the action, and end.
+        :param date_time: The current date and time.
         """
+        if date_time is None:
+            date_time = self.get_current_time()
+
         if self.read_config()["logs"]["log_to_logger"]:
-            logger.add_message(message)
+            logger.add_message(message, date_time)
         if self.read_config()["logs"]["log_to_database"]:
-            database.save_to_db(message, timer_id, time_elapsed)
+            database.save_to_db(message, timer_id, time_elapsed, date_time)
         if self.read_config()["logs"]["log_to_thingspeak"]:
             state = None
             if("HIGH" in message):
