@@ -16,7 +16,6 @@ class Database:
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
         # Connect and create the table if it doesnt exist already
-        # TODO: Make this it's own function, and docstring it.
         try:
             print(f"Trying db at {db_path}")
             conn = sqlite3.connect(self.config["database"]["path"])
