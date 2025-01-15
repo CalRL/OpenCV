@@ -330,7 +330,6 @@ class HandTracker:
                 processed_frame = self.process_frame(frame)
                 cv.imshow("Hand Tracking", processed_frame)
 
-                # TODO: make the key reader into its own function.
                 key = cv.waitKey(1) & 0xFF
 
                 # Kill process if key is pressed
