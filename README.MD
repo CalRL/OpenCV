@@ -9,12 +9,12 @@ python -m venv .venv
 # Activate the virtual environment
 ## Windows
 ```bash
-./.venv/Scripts/activate
+.\.venv\Scripts\activate
 ```
 
 ## macOS / Linux:
 ```bash
-source /.venv/Scripts/activate
+source ./.venv/Scripts/activate
 ```
 
 # Install the pip packages
