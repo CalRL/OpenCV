@@ -36,6 +36,19 @@ PERFORMANCE_KEY=PROVIDEDKEY
 ```
 Just replace "PROVIDEDKEY" with the keys provided in the report.
 
+# Change the config IP address to reflect the one on your arduino
+```yaml
+#config.yaml
+
+# Make sure these are correct!
+# These will be different for you
+# Plugging the arduino into the Windows machine and running the arduino IDE with the serial monitor,
+# Will show you the IP that the arduino is using.
+arduino:
+  host: 172.20.10.2
+  port: 5001
+```
+
 
 # [Optional] Deactivate environment
 ```bash
