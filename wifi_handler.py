@@ -35,8 +35,13 @@ class WiFiClientHandler:
             print(f"Connected to Arduino Wi-Fi server at {self.host}:{self.port}")
         except Exception as e:
             print(f"Error connecting to the server: {e}")
-            print("Retrying...")
-            self.connect()
+            i = 1
+            while i < 10:
+                print(f"Retrying {10-i} more times...")
+                self.client_socket.connect((self.host, self.port))
+                i += 1
+            if not self.client_socket:
+                exit()
 
     def send_message(self, message):
         """
@@ -64,9 +69,10 @@ class WiFiClientHandler:
         """
         if not self.client_socket:
             print("Not connected to the server. Call connect() first.")
-            i = 0
+            i = 1
             while i < 10:
-                self.client_socket.connect(self.host, self.port)
+                print(f"Retrying {10-i} more times...")
+                self.client_socket.connect()
                 i += 1
             if not self.client_socket:
                 exit()
